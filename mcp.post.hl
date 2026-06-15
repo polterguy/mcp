@@ -15,9 +15,6 @@
  */
 .arguments:*
 
-// Require an authenticated Magic user; the client passes its JWT as a bearer token.
-auth.ticket.verify
-
 /*
  * A JSON-RPC notification carries no [id] - acknowledge it with 202 and an empty body.
  * Everything else is a request - dispatch on [method] and answer with a JSON-RPC envelope.
