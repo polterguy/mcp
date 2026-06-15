@@ -101,22 +101,45 @@ else
                         properties
                   for-each:x:@.dp/#/*/input/*
 
-                     // Map the Hyperlambda type to a JSON-schema type.
+                     /*
+                      * Mapping the Hyperlambda type to a JSON-schema type, optionally with a
+                      * [format] hint. JSON-schema only has string/number/integer/boolean, so the
+                      * integer and floating families collapse, and date/guid keep their shape
+                      * through [format]. Anything else (char, time, bytes, x, node, ...) is a string.
+                      * [for-each] resets the body each iteration, so [.jtype]/[.jformat] start blank.
+                      */
                      .jtype
+                     .jformat
                      switch:x:@.dp/#/*/type
                         case:short
+                        case:ushort
                         case:int
+                        case:uint
                         case:long
+                        case:ulong
+                        case:byte
+                        case:sbyte
                            set-value:x:@.jtype
                               .:integer
-                        case:float
-                        case:double
                         case:decimal
+                        case:double
+                        case:single
+                        case:float
                            set-value:x:@.jtype
                               .:number
                         case:bool
                            set-value:x:@.jtype
                               .:boolean
+                        case:date
+                           set-value:x:@.jtype
+                              .:string
+                           set-value:x:@.jformat
+                              .:date-time
+                        case:guid
+                           set-value:x:@.jtype
+                              .:string
+                           set-value:x:@.jformat
+                              .:uuid
                         default
                            set-value:x:@.jtype
                               .:string
@@ -130,6 +153,16 @@ else
                               type
                      set-value:x:@.tool/*/inputSchema/*/properties/0/-/*/type
                         get-value:x:@.jtype
+
+                     // Attaching a [format] hint when the type has one (date, guid).
+                     if
+                        not-null:x:@.jformat
+                        .lambda
+                           add:x:@.tool/*/inputSchema/*/properties/0/-
+                              .
+                                 format
+                           set-value:x:@.tool/*/inputSchema/*/properties/0/-/*/format
+                              get-value:x:@.jformat
 
             // Append the finished descriptor to the tools array as an unnamed "." item.
             add:x:@.envelope/*/result/*/tools
