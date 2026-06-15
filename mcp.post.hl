@@ -190,28 +190,63 @@ else
             not-null:x:@.file
             .lambda
 
-               // Invoke the underlying endpoint with the supplied arguments.
-               add:x:+
-                  get-nodes:x:@.arguments/*/params/*/arguments/*
-               execute-file:x:@.file
-
-               // Serialise the endpoint's result to a JSON string for the text content block.
+               /*
+                * Invoking the tool inside a [try] so a throwing endpoint becomes a visible MCP
+                * tool error ([isError] content) the client can react to, instead of propagating as
+                * a raw HTTP error the MCP client discards. On failure [.catch] receives the
+                * exception as [.arguments]/[message|type|public] - see [try] in magic.lambda.
+                */
                .text
-               if
-                  exists:x:@execute-file/*
-                  .lambda
+               try
+
+                  // Invoke the endpoint with the supplied arguments and serialise its result.
+                  add:x:+
+                     get-nodes:x:@.arguments/*/params/*/arguments/*
+                  execute-file:x:@.file
+                  if
+                     exists:x:@execute-file/*
+                     .lambda
+                        set-value:x:@.text
+                           lambda2json:x:@execute-file/*
+                  else
                      set-value:x:@.text
-                        lambda2json:x:@execute-file/*
-               else
+                        get-value:x:@execute-file
+                  add:x:@.envelope
+                     .
+                        result
+                           content
+                              .
+                                 type:text
+                                 text
+
+               .catch
+
+                  /*
+                   * The tool threw. Always log the real detail server-side, but only relay it to
+                   * the client when the endpoint marked the exception [public]; otherwise return a
+                   * generic message so internal failures don't leak to the model.
+                   */
+                  log.error:x:@.arguments/*/message
+                     type:x:@.arguments/*/type
                   set-value:x:@.text
-                     get-value:x:@execute-file
-               add:x:@.envelope
-                  .
-                     result
-                        content
-                           .
-                              type:text
-                              text
+                     .:Tool execution failed
+                  if
+                     eq
+                        get-value:x:@.arguments/*/public
+                        .:bool:true
+                     .lambda
+                        set-value:x:@.text
+                           get-value:x:@.arguments/*/message
+                  add:x:@.envelope
+                     .
+                        result
+                           content
+                              .
+                                 type:text
+                                 text
+                           isError:bool:true
+
+               // Placing the text (result or error message) and returning the envelope.
                set-value:x:@.envelope/*/result/*/content/*/*/text
                   get-value:x:@.text
                return-nodes:x:@.envelope/*
