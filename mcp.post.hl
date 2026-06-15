@@ -1,34 +1,56 @@
 
 /*
- * Model Context Protocol (MCP) server for Magic - JSON-RPC 2.0 over HTTP.
+ * Model Context Protocol (MCP) server for a Magic backend, speaking JSON-RPC 2.0 over HTTP at the
+ * single endpoint POST /magic/modules/mcp/mcp. Its purpose is to expose the cloudlet's own dynamic
+ * Hyperlambda endpoints to MCP clients (Claude Desktop, Cursor, the Claude API, ...) as callable
+ * "tools", reusing the platform's existing endpoint discovery and invocation so that a tool reaches
+ * the exact same endpoint, enforcing the exact same per-endpoint authorisation, as a normal HTTP
+ * request would. Responses are plain JSON, a spec-compliant subset of the Streamable HTTP transport;
+ * no Server-Sent Events are used.
  *
- * Endpoint: POST /magic/modules/mcp/mcp
+ * The whole JSON-RPC envelope arrives untyped, so the endpoint accepts any arguments. A message that
+ * carries no [id] is a JSON-RPC notification: it is acknowledged with HTTP status 202 and an empty
+ * body, and nothing else happens. A message that carries an [id] is a request, and is answered with a
+ * JSON-RPC reply object holding "jsonrpc" set to "2.0" and the same [id] echoed back, after which the
+ * [method] is dispatched:
  *
- * Exposes every dynamic Hyperlambda endpoint underneath "modules/" (except this MCP module
- * itself) as an MCP "tool". Discovery reuses [endpoints.list]; execution reuses [execute-file]
- * - so an MCP client reaches the exact same endpoints, enforcing the exact same per-endpoint
- * authorisation, as an HTTP client would.
+ *   - "initialize" returns the handshake result: a protocolVersion (the client's requested
+ *     params.protocolVersion when present, otherwise 2024-11-05), a capabilities object advertising a
+ *     non-list-changing "tools" capability, and a serverInfo naming the server "magic-mcp".
  *
- * Implements the minimal viable server - initialize, ping, tools/list and tools/call - and
- * acknowledges JSON-RPC notifications with 202. Responses are plain JSON, a spec-compliant
- * subset of the Streamable HTTP transport; SSE is not used.
+ *   - "ping" returns an empty result.
+ *
+ *   - "tools/list" builds the catalogue by executing /modules/mcp/tools.hl (forwarding the optional
+ *     [path] query argument that scopes a server instance to a single module), then turns every
+ *     catalogued endpoint into an MCP tool descriptor carrying its name, its description and an
+ *     inputSchema JSON-schema object of "type":"object". For every declared argument a property is
+ *     added under inputSchema/properties, named after the argument, whose JSON-schema "type" is
+ *     derived from the Hyperlambda type: short, ushort, int, uint, long, ulong, byte and sbyte become
+ *     "integer"; decimal, double, single and float become "number"; bool becomes "boolean"; date and
+ *     guid become "string" but additionally carry a "format" of "date-time" respectively "uuid"; and
+ *     anything else (string, char, time, ...) becomes "string". The descriptors accumulate as an
+ *     array under result/tools.
+ *
+ *   - "tools/call" resolves params.name against the same /modules/mcp/tools.hl catalogue, so a client
+ *     can only ever invoke a tool that was also listed, and only within the optional [path] scope. On
+ *     a match the resolved endpoint file is invoked with params.arguments inside a [try], so that a
+ *     throwing endpoint is reported in-band as an MCP tool error instead of leaking as a raw HTTP
+ *     failure the client discards: on success the endpoint's result is serialised to JSON and returned
+ *     as a single text content block; on failure the exception is logged server-side and returned as a
+ *     text content block with "isError" set to true, relaying the real message only when the endpoint
+ *     marked the exception public and a generic "Tool execution failed" otherwise. A name that
+ *     resolves to nothing yields the JSON-RPC error -32602 with message "Unknown tool: <name>".
+ *
+ *   - any other method yields the JSON-RPC error -32601 with message "Method not found".
  */
 .arguments:*
 
-/*
- * A JSON-RPC notification carries no [id] - acknowledge it with 202 and an empty body.
- * Everything else is a request - dispatch on [method] and answer with a JSON-RPC envelope.
- */
 if
    not-exists:x:@.arguments/*/id
    .lambda
-
-      // Notification - no response body, just acknowledge.
       response.status.set:202
-
 else
 
-   // Request - prepare the reply envelope (jsonrpc + echoed id).
    .envelope
       jsonrpc:2.0
       id
@@ -39,7 +61,6 @@ else
 
       case:initialize
 
-         // Handshake - echo the client's protocol version if present, advertise tools.
          .version:2024-11-05
          if
             exists:x:@.arguments/*/params/*/protocolVersion
@@ -62,7 +83,6 @@ else
 
       case:ping
 
-         // Liveness probe - JSON-RPC requires a result member; empty is fine.
          add:x:@.envelope
             .
                result
@@ -70,15 +90,14 @@ else
 
       case:tools/list
 
-         // One MCP tool descriptor per catalogued endpoint.
          add:x:@.envelope
             .
                result
                   tools
          execute-file:/modules/mcp/tools.hl
+            path:x:@.arguments/*/path
          for-each:x:@execute-file/*
 
-            // Build the descriptor in scratch [.tool].
             .tool
             set-value:x:@.tool
             add:x:@.tool
@@ -92,7 +111,6 @@ else
             set-value:x:@.tool/*/description
                get-value:x:@.dp/#/*/description
 
-            // Add a JSON-schema property per declared argument, if any.
             if
                exists:x:@.dp/#/*/input/*
                .lambda
@@ -101,13 +119,6 @@ else
                         properties
                   for-each:x:@.dp/#/*/input/*
 
-                     /*
-                      * Mapping the Hyperlambda type to a JSON-schema type, optionally with a
-                      * [format] hint. JSON-schema only has string/number/integer/boolean, so the
-                      * integer and floating families collapse, and date/guid keep their shape
-                      * through [format]. Anything else (char, time, bytes, x, node, ...) is a string.
-                      * [for-each] resets the body each iteration, so [.jtype]/[.jformat] start blank.
-                      */
                      .jtype
                      .jformat
                      switch:x:@.dp/#/*/type
@@ -144,7 +155,6 @@ else
                            set-value:x:@.jtype
                               .:string
 
-                     // Append a property named after the argument: "<arg>": { "type": ... }.
                      set-name:x:+/*/*
                         get-value:x:@.dp/#/*/name
                      add:x:@.tool/*/inputSchema/*/properties
@@ -154,7 +164,6 @@ else
                      set-value:x:@.tool/*/inputSchema/*/properties/0/-/*/type
                         get-value:x:@.jtype
 
-                     // Attaching a [format] hint when the type has one (date, guid).
                      if
                         not-null:x:@.jformat
                         .lambda
@@ -164,7 +173,6 @@ else
                            set-value:x:@.tool/*/inputSchema/*/properties/0/-/*/format
                               get-value:x:@.jformat
 
-            // Append the finished descriptor to the tools array as an unnamed "." item.
             add:x:@.envelope/*/result/*/tools
                .
                   .
@@ -174,9 +182,9 @@ else
 
       case:tools/call
 
-         // Resolve the requested tool name against the catalogue (single source of truth).
          .file
          execute-file:/modules/mcp/tools.hl
+            path:x:@.arguments/*/path
          for-each:x:@execute-file/*
             if
                eq
@@ -190,16 +198,9 @@ else
             not-null:x:@.file
             .lambda
 
-               /*
-                * Invoking the tool inside a [try] so a throwing endpoint becomes a visible MCP
-                * tool error ([isError] content) the client can react to, instead of propagating as
-                * a raw HTTP error the MCP client discards. On failure [.catch] receives the
-                * exception as [.arguments]/[message|type|public] - see [try] in magic.lambda.
-                */
                .text
                try
 
-                  // Invoke the endpoint with the supplied arguments and serialise its result.
                   add:x:+
                      get-nodes:x:@.arguments/*/params/*/arguments/*
                   execute-file:x:@.file
@@ -221,11 +222,6 @@ else
 
                .catch
 
-                  /*
-                   * The tool threw. Always log the real detail server-side, but only relay it to
-                   * the client when the endpoint marked the exception [public]; otherwise return a
-                   * generic message so internal failures don't leak to the model.
-                   */
                   log.error:x:@.arguments/*/message
                      type:x:@.arguments/*/type
                   set-value:x:@.text
@@ -246,14 +242,12 @@ else
                                  text
                            isError:bool:true
 
-               // Placing the text (result or error message) and returning the envelope.
                set-value:x:@.envelope/*/result/*/content/*/*/text
                   get-value:x:@.text
                return-nodes:x:@.envelope/*
 
          else
 
-            // No tool by that name.
             .msg
             set-value:x:@.msg
                strings.concat
@@ -270,7 +264,6 @@ else
 
       default
 
-         // Unrecognised JSON-RPC method.
          add:x:@.envelope
             .
                error

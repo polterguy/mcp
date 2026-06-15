@@ -1,39 +1,83 @@
 
 /*
- * Internal helper for the MCP module only ever invoked through [execute-file] from mcp.post.hl.
+ * Internal catalogue builder for the MCP module, invoked only through [execute-file] from
+ * mcp.post.hl - it carries no HTTP verb in its filename and is therefore never itself an endpoint or
+ * a tool. It produces the single source of truth that both "tools/list" and "tools/call" consume, so
+ * the set of listable tools and the set of callable tools are always identical.
  *
- * Returns one node per MCP "tool", a tool being every dynamic Hyperlambda endpoint
- * underneath "modules/" EXCEPT the MCP module itself. Each returned node looks like:
+ * It enumerates every dynamic Hyperlambda endpoint in the cloudlet via [endpoints.list] and keeps
+ * only application endpoints under "modules/", always excluding the MCP module itself so the
+ * transport never exposes its own plumbing as a tool. An optional [path] argument - forwarded from
+ * the dispatcher's query string, e.g. "/modules/foo/" - narrows the catalogue to a single module
+ * subtree. It is normalised to carry both a leading and a trailing slash, so that "/modules/foo",
+ * "modules/foo/" and "/modules/foo/" all denote the same folder and a value such as "/modules/foo"
+ * can never leak into a sibling like "/modules/foobar/", then turned into a "magic/..." prefix the
+ * endpoint paths are matched against. When no [path] is supplied the narrowing prefix defaults to
+ * "magic/modules/", making the extra check a no-op; an always-present "magic/modules/" guard
+ * additionally confines any narrowing inside modules/, so even a system path can never widen exposure.
  *
- *   .
- *      name .......... charset-safe, unique tool name, eg "get_crm_customers"
- *      file .......... Hyperlambda file to execute, eg "/modules/crm/customers.get.hl"
- *      description ... the endpoint's description, or null
- *      input ......... the endpoint's argument metadata (one [.] per argument; name/type/...)
- *
- * Both [tools/list] and [tools/call] build on this single source of truth, so a client can
- * only ever invoke a tool that was also listed.
+ * For each surviving endpoint it emits one unnamed node carrying:
+ *   - name: a charset-safe, unique tool name formed as "<verb>_" followed by the path below
+ *     "modules/" with every "/" replaced by "_", e.g. "get_crm_customers".
+ *   - file: the Hyperlambda file to execute, e.g. "/modules/crm/customers.get.hl".
+ *   - description: the endpoint's description, or null.
+ *   - input: a clone of the endpoint's argument metadata, one child per declared argument.
+ * The accumulated catalogue is returned to the caller.
  */
+.arguments
+   path:string
 
-// Every dynamic endpoint in the system, decorated with its metadata.
 endpoints.list
 
-// Result buffer.
+.narrow:magic/modules/
+if
+   not-null:x:@.arguments/*/path
+   .lambda
+
+      .p
+      set-value:x:@.p
+         get-value:x:@.arguments/*/path
+
+      if
+         not
+            strings.starts-with:x:@.p
+               .:/
+         .lambda
+            set-value:x:@.p
+               strings.concat
+                  .:/
+                  get-value:x:@.p
+
+      if
+         not
+            strings.ends-with:x:@.p
+               .:/
+         .lambda
+            set-value:x:@.p
+               strings.concat
+                  get-value:x:@.p
+                  .:/
+
+      set-value:x:@.narrow
+         strings.concat
+            .:magic
+            get-value:x:@.p
+
 .tools
 
 for-each:x:@endpoints.list/*
 
-   // Only application endpoints (modules/), and never the MCP module itself.
    if
       and
          strings.starts-with:x:@.dp/#/*/path
             .:magic/modules/
+         strings.starts-with:x:@.dp/#/*/path
+            get-value:x:@.narrow
          not
             strings.starts-with:x:@.dp/#/*/path
                .:magic/modules/mcp/
       .lambda
 
-         // Tool name, eg "get_crm_customers": "<verb>_" + path below modules/ with "/" => "_".
          .name
          set-value:x:@.name
             strings.replace:x:@.dp/#/*/path
@@ -48,7 +92,6 @@ for-each:x:@endpoints.list/*
                .:_
                get-value:x:@.name
 
-         // File to execute, eg "/modules/crm/customers.get.hl".
          .file
          set-value:x:@.file
             strings.concat
@@ -59,7 +102,6 @@ for-each:x:@endpoints.list/*
                get-value:x:@.dp/#/*/verb
                .:.hl
 
-         // Appending an (unnamed) tool descriptor to the buffer, then filling it in.
          add:x:@.tools
             .
                .
@@ -76,5 +118,4 @@ for-each:x:@endpoints.list/*
          add:x:@.tools/0/-/*/input
             get-nodes:x:@.dp/#/*/input/*
 
-// Returning the tool catalogue to caller.
 return-nodes:x:@.tools/*
