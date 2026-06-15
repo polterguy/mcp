@@ -1,0 +1,81 @@
+
+/*
+ * Internal helper for the MCP module - NOT an HTTP endpoint (the filename carries no HTTP
+ * verb), only ever invoked through [execute-file] from mcp.post.hl.
+ *
+ * Returns one node per MCP "tool", a tool being every dynamic Hyperlambda endpoint
+ * underneath "modules/" EXCEPT the MCP module itself. Each returned node looks like:
+ *
+ *   .
+ *      name .......... charset-safe, unique tool name, eg "get_crm_customers"
+ *      file .......... Hyperlambda file to execute, eg "/modules/crm/customers.get.hl"
+ *      description ... the endpoint's description, or null
+ *      input ......... the endpoint's argument metadata (one [.] per argument; name/type/...)
+ *
+ * Both [tools/list] and [tools/call] build on this single source of truth, so a client can
+ * only ever invoke a tool that was also listed.
+ */
+
+// Every dynamic endpoint in the system, decorated with its metadata.
+endpoints.list
+
+// Result buffer.
+.tools
+
+for-each:x:@endpoints.list/*
+
+   // Only application endpoints (modules/), and never the MCP module itself.
+   if
+      and
+         strings.starts-with:x:@.dp/#/*/path
+            .:magic/modules/
+         not
+            strings.starts-with:x:@.dp/#/*/path
+               .:magic/modules/mcp/
+      .lambda
+
+         // Tool name, eg "get_crm_customers": "<verb>_" + path below modules/ with "/" => "_".
+         .name
+         set-value:x:@.name
+            strings.replace:x:@.dp/#/*/path
+               .:magic/modules/
+         set-value:x:@.name
+            strings.replace:x:@.name
+               .:/
+               .:_
+         set-value:x:@.name
+            strings.concat
+               get-value:x:@.dp/#/*/verb
+               .:_
+               get-value:x:@.name
+
+         // File to execute, eg "/modules/crm/customers.get.hl".
+         .file
+         set-value:x:@.file
+            strings.concat
+               strings.replace:x:@.dp/#/*/path
+                  .:magic/
+                  .:/
+               .:.
+               get-value:x:@.dp/#/*/verb
+               .:.hl
+
+         // Appending an (unnamed) tool descriptor to the buffer, then filling it in.
+         add:x:@.tools
+            .
+               .
+                  name
+                  file
+                  description
+                  input
+         set-value:x:@.tools/0/-/*/name
+            get-value:x:@.name
+         set-value:x:@.tools/0/-/*/file
+            get-value:x:@.file
+         set-value:x:@.tools/0/-/*/description
+            get-value:x:@.dp/#/*/description
+         add:x:@.tools/0/-/*/input
+            get-nodes:x:@.dp/#/*/input/*
+
+// Returning the tool catalogue to caller.
+return-nodes:x:@.tools/*

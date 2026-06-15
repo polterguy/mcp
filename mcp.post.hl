@@ -1,0 +1,214 @@
+
+/*
+ * Model Context Protocol (MCP) server for Magic - JSON-RPC 2.0 over HTTP.
+ *
+ * Endpoint: POST /magic/modules/mcp/mcp
+ *
+ * Exposes every dynamic Hyperlambda endpoint underneath "modules/" (except this MCP module
+ * itself) as an MCP "tool". Discovery reuses [endpoints.list]; execution reuses [execute-file]
+ * - so an MCP client reaches the exact same endpoints, enforcing the exact same per-endpoint
+ * authorisation, as an HTTP client would.
+ *
+ * Implements the minimal viable server - initialize, ping, tools/list and tools/call - and
+ * acknowledges JSON-RPC notifications with 202. Responses are plain JSON, a spec-compliant
+ * subset of the Streamable HTTP transport; SSE is not used.
+ */
+.arguments:*
+
+// Require an authenticated Magic user; the client passes its JWT as a bearer token.
+auth.ticket.verify
+
+/*
+ * A JSON-RPC notification carries no [id] - acknowledge it with 202 and an empty body.
+ * Everything else is a request - dispatch on [method] and answer with a JSON-RPC envelope.
+ */
+if
+   not-exists:x:@.arguments/*/id
+   .lambda
+
+      // Notification - no response body, just acknowledge.
+      response.status.set:202
+
+else
+
+   // Request - prepare the reply envelope (jsonrpc + echoed id).
+   .envelope
+      jsonrpc:2.0
+      id
+   set-value:x:@.envelope/*/id
+      get-value:x:@.arguments/*/id
+
+   switch:x:@.arguments/*/method
+
+      case:initialize
+
+         // Handshake - echo the client's protocol version if present, advertise tools.
+         .version:2024-11-05
+         if
+            exists:x:@.arguments/*/params/*/protocolVersion
+            .lambda
+               set-value:x:@.version
+                  get-value:x:@.arguments/*/params/*/protocolVersion
+         add:x:@.envelope
+            .
+               result
+                  protocolVersion
+                  capabilities
+                     tools
+                        listChanged:bool:false
+                  serverInfo
+                     name:magic-mcp
+                     version:1.0.0
+         set-value:x:@.envelope/*/result/*/protocolVersion
+            get-value:x:@.version
+         return-nodes:x:@.envelope/*
+
+      case:ping
+
+         // Liveness probe - JSON-RPC requires a result member; empty is fine.
+         add:x:@.envelope
+            .
+               result
+         return-nodes:x:@.envelope/*
+
+      case:tools/list
+
+         // One MCP tool descriptor per catalogued endpoint.
+         add:x:@.envelope
+            .
+               result
+                  tools
+         execute-file:/modules/mcp/tools.hl
+         for-each:x:@execute-file/*
+
+            // Build the descriptor in scratch [.tool].
+            .tool
+            set-value:x:@.tool
+            add:x:@.tool
+               .
+                  name
+                  description
+                  inputSchema
+                     type:object
+            set-value:x:@.tool/*/name
+               get-value:x:@.dp/#/*/name
+            set-value:x:@.tool/*/description
+               get-value:x:@.dp/#/*/description
+
+            // Add a JSON-schema property per declared argument, if any.
+            if
+               exists:x:@.dp/#/*/input/*
+               .lambda
+                  add:x:@.tool/*/inputSchema
+                     .
+                        properties
+                  for-each:x:@.dp/#/*/input/*
+
+                     // Map the Hyperlambda type to a JSON-schema type.
+                     .jtype
+                     switch:x:@.dp/#/*/type
+                        case:short
+                        case:int
+                        case:long
+                           set-value:x:@.jtype
+                              .:integer
+                        case:float
+                        case:double
+                        case:decimal
+                           set-value:x:@.jtype
+                              .:number
+                        case:bool
+                           set-value:x:@.jtype
+                              .:boolean
+                        default
+                           set-value:x:@.jtype
+                              .:string
+
+                     // Append a property named after the argument: "<arg>": { "type": ... }.
+                     set-name:x:+/*/*
+                        get-value:x:@.dp/#/*/name
+                     add:x:@.tool/*/inputSchema/*/properties
+                        .
+                           name
+                              type
+                     set-value:x:@.tool/*/inputSchema/*/properties/0/-/*/type
+                        get-value:x:@.jtype
+
+            // Append the finished descriptor to the tools array as an unnamed "." item.
+            add:x:@.envelope/*/result/*/tools
+               .
+                  .
+            add:x:@.envelope/*/result/*/tools/0/-
+               get-nodes:x:@.tool/*
+         return-nodes:x:@.envelope/*
+
+      case:tools/call
+
+         // Resolve the requested tool name against the catalogue (single source of truth).
+         .file
+         execute-file:/modules/mcp/tools.hl
+         for-each:x:@execute-file/*
+            if
+               eq
+                  get-value:x:@.dp/#/*/name
+                  get-value:x:@.arguments/*/params/*/name
+               .lambda
+                  set-value:x:@.file
+                     get-value:x:@.dp/#/*/file
+
+         if
+            not-null:x:@.file
+            .lambda
+
+               // Invoke the underlying endpoint with the supplied arguments.
+               add:x:+
+                  get-nodes:x:@.arguments/*/params/*/arguments/*
+               execute-file:x:@.file
+
+               // Serialise the endpoint's result to a JSON string for the text content block.
+               .text
+               if
+                  exists:x:@execute-file/*
+                  .lambda
+                     set-value:x:@.text
+                        lambda2json:x:@execute-file/*
+               else
+                  set-value:x:@.text
+                     get-value:x:@execute-file
+               add:x:@.envelope
+                  .
+                     result
+                        content
+                           .
+                              type:text
+                              text
+               set-value:x:@.envelope/*/result/*/content/*/*/text
+                  get-value:x:@.text
+               return-nodes:x:@.envelope/*
+
+         else
+
+            // No tool by that name.
+            .msg
+            set-value:x:@.msg
+               strings.concat
+                  .:"Unknown tool: "
+                  get-value:x:@.arguments/*/params/*/name
+            add:x:@.envelope
+               .
+                  error
+                     code:int:-32602
+                     message
+            set-value:x:@.envelope/*/error/*/message
+               get-value:x:@.msg
+            return-nodes:x:@.envelope/*
+
+      default
+
+         // Unrecognised JSON-RPC method.
+         add:x:@.envelope
+            .
+               error
+                  code:int:-32601
+                  message:Method not found
+         return-nodes:x:@.envelope/*
