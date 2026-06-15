@@ -1,7 +1,6 @@
 
 /*
- * Internal helper for the MCP module - NOT an HTTP endpoint (the filename carries no HTTP
- * verb), only ever invoked through [execute-file] from mcp.post.hl.
+ * Internal helper for the MCP module only ever invoked through [execute-file] from mcp.post.hl.
  *
  * Returns one node per MCP "tool", a tool being every dynamic Hyperlambda endpoint
  * underneath "modules/" EXCEPT the MCP module itself. Each returned node looks like:
