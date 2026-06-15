@@ -37,9 +37,21 @@ authorization, as an HTTP client would. There is no separate tool registry to ma
 | `initialize` | Handshake. Echoes the client's `protocolVersion` when supplied, advertises the `tools` capability, returns `serverInfo`. |
 | `ping` | Liveness probe. |
 | `tools/list` | One descriptor per exposed endpoint, each with a JSON-Schema `inputSchema` derived from the endpoint's `[.arguments]`. |
-| `tools/call` | Resolves the tool name, invokes the underlying endpoint with the supplied arguments, returns the result as a `text` content block (the endpoint's JSON result, stringified). |
+| `tools/call` | Resolves the tool name, invokes the underlying endpoint with the supplied arguments, returns the result as a `text` content block (the endpoint's JSON result, stringified). A throwing endpoint is reported as an `isError` content block — see [Errors](#errors). |
 | notifications | Any JSON-RPC notification (a message with no `id`, e.g. `notifications/initialized`) is acknowledged with HTTP `202` and an empty body. |
 | unknown method / tool | JSON-RPC error `-32601` (method not found) / `-32602` (unknown tool). |
+
+## Errors
+
+The two MCP error channels are kept distinct:
+
+- **Protocol errors** — malformed or unroutable requests (unknown method, unknown tool) come back
+  as a JSON-RPC `error` object (`-32601` / `-32602`).
+- **Tool execution errors** — when the underlying endpoint throws, the call still returns a
+  JSON-RPC `result`, but with `"isError": true` and the message in the `text` content block, so the
+  model sees the failure in-band. Exceptions the endpoint marked `public` relay their real message;
+  all others return a generic `"Tool execution failed"` and are `log.error`'d server-side — internal
+  detail is never leaked to the client, but never silently swallowed either.
 
 ## Authentication
 
@@ -121,8 +133,6 @@ Clients that only speak stdio can bridge to this HTTP endpoint with a tool such 
 
 ## Known limitations (v1)
 
-- A tool that throws propagates as a normal Magic error response rather than an MCP
-  `isError` content block, so a client won't see the failure in-band.
 - `ping` returns `"result":null` and a description-less tool returns `"description":null`
   (the lambda-to-JSON serializer renders childless nodes as scalars). Clients tolerate this.
 - An install with **no** `modules/` endpoints would serialize `tools` as `null` rather than `[]`.
