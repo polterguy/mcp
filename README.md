@@ -1,4 +1,4 @@
-# MCP — Model Context Protocol server for Magic
+# MCP for Magic
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server, implemented entirely in
 Hyperlambda. It exposes your Magic backend's dynamic endpoints as MCP **tools**, so MCP
