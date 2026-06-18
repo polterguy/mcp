@@ -99,7 +99,6 @@ else
          for-each:x:@execute-file/*
 
             .tool
-            set-value:x:@.tool
             add:x:@.tool
                .
                   name
@@ -109,7 +108,9 @@ else
             set-value:x:@.tool/*/name
                get-value:x:@.dp/#/*/name
             set-value:x:@.tool/*/description
-               get-value:x:@.dp/#/*/description
+               get-first-value
+                  get-value:x:@.dp/#/*/description
+                  .:No description available
 
             if
                exists:x:@.dp/#/*/input/*

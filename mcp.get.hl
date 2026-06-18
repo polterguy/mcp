@@ -1,0 +1,11 @@
+/*
+ * GET handler for the MCP endpoint - URL: GET /magic/modules/mcp/mcp
+ *
+ * Streamable HTTP lets a client open a server->client SSE channel by issuing a GET to this
+ * same URL. This server is POST-only and never streams, so we decline the GET with 405 Method
+ * Not Allowed - the transport's signal for "no SSE at this endpoint". Clients (mcp-remote / the
+ * MCP SDK) treat 405 as "fine, POST only" and stop probing. With no GET route today the probe
+ * gets a 404, which the SDK throws on instead of tolerating - that is the
+ * "Failed to open SSE stream: Not Found" in every session.
+ */
+response.status.set:405
