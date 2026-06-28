@@ -63,12 +63,47 @@ if
             .:magic
             get-value:x:@.p
 
+// Snapshotting the caller's roles so the catalogue only exposes endpoints they are allowed to execute.
+auth.ticket.get
+.roles
+add:x:@.roles
+   get-nodes:x:@auth.ticket.get/*/roles/*
+
 .tools
 
 for-each:x:@endpoints.list/*
 
+   // Deciding whether the caller may execute this endpoint. A [root] user sees everything; an endpoint
+   // with no [auth] (public or any-authenticated) is visible; otherwise the caller must hold at least
+   // one of the endpoint's required roles - mirroring how [auth.ticket.verify] enforces it at call time.
+   .allowed
+   set-value:x:@.allowed
+      .:bool:false
+   if
+      exists:x:@.roles/*/=root
+      .lambda
+         set-value:x:@.allowed
+            .:bool:true
+   else-if
+      not-exists:x:@.dp/#/*/auth/*
+      .lambda
+         set-value:x:@.allowed
+            .:bool:true
+   else
+      for-each:x:@.dp/#/*/auth/*
+         .r
+         set-value:x:@.r
+            get-value:x:@.dp/#
+         if
+            exists:x:@.roles/*/={@.r}
+            .lambda
+               set-value:x:@.allowed
+                  .:bool:true
+
    if
       and
+         eq:x:@.allowed
+            .:bool:true
          strings.starts-with:x:@.dp/#/*/path
             .:magic/modules/
          strings.starts-with:x:@.dp/#/*/path
