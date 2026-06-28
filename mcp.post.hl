@@ -45,6 +45,35 @@
  */
 .arguments:*
 
+/*
+ * Requiring an authenticated Magic user. An unauthenticated request gets a 401 whose WWW-Authenticate
+ * header points OAuth clients at this cloudlet's protected-resource metadata, so they can discover and
+ * run the OAuth flow automatically (see the "oauth" module). Remove this block to make the server anonymous.
+ */
+auth.ticket.get
+if
+   null:x:@auth.ticket.get
+   .lambda
+      .meta-url
+      set-value:x:@.meta-url
+         strings.concat
+            .:"https://"
+            request.host
+            .:/.well-known/oauth-protected-resource
+      .challenge
+      set-value:x:@.challenge
+         strings.concat
+            .:"Bearer resource_metadata="
+            .:'"'
+            get-value:x:@.meta-url
+            .:'"'
+      response.headers.set
+         WWW-Authenticate:x:@.challenge
+      response.status.set:401
+      return
+         error:unauthorized
+         error_description:Authentication required
+
 if
    not-exists:x:@.arguments/*/id
    .lambda
