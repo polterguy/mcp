@@ -6,8 +6,9 @@
  * the set of listable tools and the set of callable tools are always identical.
  *
  * It enumerates every dynamic Hyperlambda endpoint in the cloudlet via [endpoints.list] and keeps
- * only application endpoints under "modules/", always excluding the MCP module itself so the
- * transport never exposes its own plumbing as a tool. An optional [path] argument - forwarded from
+ * only application endpoints under "modules/", always excluding the MCP and OAuth modules so the
+ * transport never exposes its own plumbing or the OAuth authorization endpoints as tools. An
+ * optional [path] argument - forwarded from
  * the dispatcher's query string, e.g. "/modules/foo/" - narrows the catalogue to a single module
  * subtree. It is normalised to carry both a leading and a trailing slash, so that "/modules/foo",
  * "modules/foo/" and "/modules/foo/" all denote the same folder and a value such as "/modules/foo"
@@ -111,6 +112,9 @@ for-each:x:@endpoints.list/*
          not
             strings.starts-with:x:@.dp/#/*/path
                .:magic/modules/mcp/
+         not
+            strings.starts-with:x:@.dp/#/*/path
+               .:magic/modules/oauth/
       .lambda
 
          .name
