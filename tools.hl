@@ -171,7 +171,10 @@ for-each:x:@endpoints.list/*
 if
    and
       exists:x:@.roles/*/=root
-      null:x:@.arguments/*/path
+      or
+         null:x:@.arguments/*/path
+         eq:x:@.arguments/*/path
+            .:
    .lambda
 
       io.file.list-recursively:/misc/workflows/workflows/
@@ -249,20 +252,5 @@ if
                            get-value:x:@.argname
                         set-value:x:@.tools/0/-/*/input/0/-/*/type
                            get-value:x:@.dp/#
-
-// TEMP DIAGNOSTIC - logs the caller's roles and what the catalogue produced. Remove after diagnosing.
-.diag
-set-value:x:@.diag
-   strings.concat
-      .:"MCP tools.hl caller: roles=["
-      strings.join:x:@.roles/*
-         .:,
-      .:"]  path="
-      get-value:x:@.arguments/*/path
-      .:"  has-root="
-      exists:x:@.roles/*/=root
-      .:"  total-tools="
-      get-count:x:@.tools/*
-log.info:x:@.diag
 
 return-nodes:x:@.tools/*
