@@ -34,6 +34,19 @@
 .arguments
    path:string
 
+/*
+ * Workflow files (by filename) deliberately hidden from the MCP tool catalogue. They remain
+ * fully callable through normal invocation; they are only excluded from what MCP clients see.
+ */
+.excluded
+   .:execute-hyperlambda.hl
+   .:add-file-to-session.hl
+   .:add-html-widget.hl
+   .:create-ai-function.hl
+   .:render-html-widget.hl
+   .:compress-memory.hl
+   .:display-html-widget.hl
+
 endpoints.list
 
 .narrow:magic/modules/
@@ -179,9 +192,28 @@ if
 
       io.file.list-recursively:/misc/workflows/workflows/
       for-each:x:@io.file.list-recursively/*
+
+         // Capturing the file path, then checking whether it is explicitly excluded from the MCP catalogue.
+         .fpath
+         set-value:x:@.fpath
+            get-value:x:@.dp/#
+         .excluded-match
+         set-value:x:@.excluded-match
+            .:bool:false
+         for-each:x:@.excluded/*
+            if
+               strings.ends-with:x:@.fpath
+                  get-value:x:@.dp/#
+               .lambda
+                  set-value:x:@.excluded-match
+                     .:bool:true
+
          if
-            strings.ends-with:x:@.dp/#
-               .:.hl
+            and
+               strings.ends-with:x:@.fpath
+                  .:.hl
+               eq:x:@.excluded-match
+                  .:bool:false
             .lambda
 
                // Charset-safe, unique tool name: "workflow_" + path below the folder, "/" replaced by "_".
@@ -239,9 +271,8 @@ if
                      and
                         neq:x:@.argname
                            .:..
-                        not
-                           strings.starts-with:x:@.argname
-                              .:_
+                        neq:x:@.argname
+                           .:_session
                      .lambda
                         add:x:@.tools/0/-/*/input
                            .
