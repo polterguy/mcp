@@ -106,8 +106,14 @@ else
                   serverInfo
                      name:magic-mcp
                      version:1.0.0
+                  instructions
          set-value:x:@.envelope/*/result/*/protocolVersion
             get-value:x:@.version
+
+         // Delivering the operating instructions to the client, loaded dynamically so edits take effect
+         // without a restart. The instructions tell the client to call [whoami] to resolve session context.
+         set-value:x:@.envelope/*/result/*/instructions
+            io.file.load:/modules/mcp/system-instruction.md
          return-nodes:x:@.envelope/*
 
       case:ping
