@@ -39,6 +39,7 @@
  * fully callable through normal invocation; they are only excluded from what MCP clients see.
  */
 .excluded
+   .:get-context.hl
    .:execute-hyperlambda.hl
    .:add-file-to-session.hl
    .:add-html-widget.hl
