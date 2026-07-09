@@ -28,8 +28,10 @@
  *     derived from the Hyperlambda type: short, ushort, int, uint, long, ulong, byte and sbyte become
  *     "integer"; decimal, double, single and float become "number"; bool becomes "boolean"; date and
  *     guid become "string" but additionally carry a "format" of "date-time" respectively "uuid"; and
- *     anything else (string, char, time, ...) becomes "string". The descriptors accumulate as an
- *     array under result/tools.
+ *     anything else (string, char, time, ...) becomes "string". An argument whose catalogue entry
+ *     carries a description - resolved from the comment directly above the argument in the file's
+ *     [.arguments] node - additionally gets that text as the property's "description". The
+ *     descriptors accumulate as an array under result/tools.
  *
  *   - "tools/call" resolves params.name against the same /modules/mcp/tools.hl catalogue, so a client
  *     can only ever invoke a tool that was also listed, and only within the optional [path] scope. On
@@ -191,23 +193,29 @@ else
                            set-value:x:@.jtype
                               .:string
 
+                     unwrap:x:+/+/*/**
                      set-name:x:+/*/*
                         get-value:x:@.dp/#/*/name
                      add:x:@.tool/*/inputSchema/*/properties
                         .
                            name
-                              type
-                     set-value:x:@.tool/*/inputSchema/*/properties/0/-/*/type
-                        get-value:x:@.jtype
+                              type:x:@.jtype
 
                      if
                         not-null:x:@.jformat
                         .lambda
+                           unwrap:x:+/*/*
                            add:x:@.tool/*/inputSchema/*/properties/0/-
                               .
-                                 format
-                           set-value:x:@.tool/*/inputSchema/*/properties/0/-/*/format
-                              get-value:x:@.jformat
+                                 format:x:@.jformat
+
+                     if
+                        not-null:x:@.dp/#/*/description
+                        .lambda
+                           unwrap:x:+/*/*
+                           add:x:@.tool/*/inputSchema/*/properties/0/-
+                              .
+                                 description:x:@.dp/#/*/description
 
             add:x:@.envelope/*/result/*/tools
                .

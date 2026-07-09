@@ -22,13 +22,16 @@
  *     "modules/" with every "/" replaced by "_", e.g. "get_crm_customers".
  *   - file: the Hyperlambda file to execute, e.g. "/modules/crm/customers.get.hl".
  *   - description: the endpoint's description, or null.
- *   - input: a clone of the endpoint's argument metadata, one child per declared argument.
+ *   - input: a clone of the endpoint's argument metadata, one child per declared argument,
+ *     including the argument's description when a comment sits directly above the argument in the
+ *     file's [.arguments] node.
  *
  * Additionally, for a [root] caller and only when the catalogue is not narrowed to a module, it appends
  * the AI "workflow" functions under "/misc/workflows/workflows/" - root-only helpers for building apps on
  * the cloudlet. These are not endpoints, so their name, description and input are read directly from each
  * file (leading doc-comment plus [.arguments], framework arguments excluded) and emitted in the same
- * descriptor shape, with names prefixed "workflow_".
+ * descriptor shape, with names prefixed "workflow_", and the comment directly above an argument
+ * becoming that argument's description.
  * The accumulated catalogue is returned to the caller.
  */
 .arguments
@@ -263,26 +266,38 @@ if
                set-value:x:@.tools/0/-/*/description
                   get-value:x:@.description
 
-               // Input schema = declared arguments, skipping comments and framework args ("_session").
+               // Input schema = declared arguments, skipping framework args ("_session"). A comment
+               // becomes the description of the argument directly below it, mirroring how
+               // [endpoints.list] resolves argument descriptions for endpoint tools.
+               .desc
                for-each:x:@hyper2lambda/*/.arguments/*
                   .argname
                   set-value:x:@.argname
                      get-name:x:@.dp/#
                   if
-                     and
-                        neq:x:@.argname
-                           .:..
+                     eq:x:@.argname
+                        .:..
+                     .lambda
+                        set-value:x:@.desc
+                           get-value:x:@.dp/#
+                  else
+                     if
                         neq:x:@.argname
                            .:_session
-                     .lambda
-                        add:x:@.tools/0/-/*/input
-                           .
+                        .lambda
+                           unwrap:x:+/*/*/*
+                           add:x:@.tools/0/-/*/input
                               .
-                                 name
-                                 type
-                        set-value:x:@.tools/0/-/*/input/0/-/*/name
-                           get-value:x:@.argname
-                        set-value:x:@.tools/0/-/*/input/0/-/*/type
-                           get-value:x:@.dp/#
+                                 .
+                                    name:x:@.argname
+                                    type:x:@.dp/#
+                           if
+                              not-null:x:@.desc
+                              .lambda
+                                 unwrap:x:+/*/*
+                                 add:x:@.tools/0/-/*/input/0/-
+                                    .
+                                       description:x:@.desc
+                     set-value:x:@.desc
 
 return-nodes:x:@.tools/*
