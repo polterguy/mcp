@@ -65,6 +65,7 @@
    .:puppeteer-wait-for-url.hl
    .:get-context.hl
    .:execute-hyperlambda.hl
+   .:execute-file.hl
    .:add-file-to-session.hl
    .:add-html-widget.hl
    .:create-ai-function.hl

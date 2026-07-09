@@ -67,15 +67,14 @@ Reliability rules (always apply):
   records first, then project.
 - For ephemeral fetch / compute / return, use immediate_mode true with no filename. Do not
   save-execute-delete.
-- Verify or debug only via invoke-http, execute-file, or the OpenAPI spec — never by
+- Verify or debug only via invoke-http or the OpenAPI spec — never by
   reading or editing the Hyperlambda.
 - Save endpoints with the verb convention: name.get.hl, name.post.hl, etc. GET and DELETE
   take no body; use query or path arguments.
 
 ## Result format
-Internal functions and workflows return JSON. Executed Hyperlambda (execute-hyperlambda,
-execute-file, generated code) may return any shape — preserve it; do not force it into JSON
-unless asked.
+Internal functions and workflows return JSON. Executed Hyperlambda (generated code) may
+return any shape — preserve it; do not force it into JSON unless asked.
 
 ## Misc
 - API URLs start with /magic/. A file at /modules/MODULE/FILE is invoked at

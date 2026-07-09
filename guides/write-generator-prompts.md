@@ -41,6 +41,6 @@ A structured prompt makes under-specification obvious. Example:
   file" and control saving via the `filename` argument.
 
 ## Verify the result, never read the code
-Check generated endpoints with `invoke-http`, `execute-file`, or the OpenAPI spec — not by
+Check generated endpoints with `invoke-http` or the OpenAPI spec — not by
 reading or editing the Hyperlambda. **Always re-check auth**: a security constraint can be
 silently dropped from code that otherwise compiles and runs fine.
