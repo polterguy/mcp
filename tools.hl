@@ -68,8 +68,6 @@
    .:execute-file.hl
    .:add-file-to-session.hl
    .:add-html-widget.hl
-   .:create-ai-function.hl
-   .:render-html-widget.hl
    .:compress-memory.hl
    .:display-html-widget.hl
 
