@@ -26,9 +26,9 @@ wired to a machine-learning type. Gather from the user:
    - Offer to insert example records via `execute-sql` after applying the schema.
    - If using an existing database, retrieve its schema (`get-database-schema`) for the next
      step.
-3. Generate CRUD AI functions for every table in the database. Use the `create-crud-api` guide's
-   template prompts. Save each generated file with a `filename`; a saved endpoint is
-   automatically exposed as an MCP tool and available to the type — no separate registration
+3. Generate CRUD AI functions for every table in the database by invoking `crudify` once per
+   verb per table — see the `create-crud-api` guide for the argument shapes. Generated endpoints
+   are automatically exposed as MCP tools and available to the type — no separate registration
    step.
 
 When done, offer to generate example records and insert them. Display database schemas as

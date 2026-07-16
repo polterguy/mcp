@@ -15,69 +15,16 @@ A full-stack app is a frontend SPA plus the API it talks to. You always have to 
 4. Combine HTML, CSS and JS into a responsive full-stack layout, using **separate files** for JS and CSS.
 5. Save the frontend files inside `/etc/www/UNIQUE_EXPLAINABLE_NAME/` as a SPA. Choose a relevant folder name for the app.
 
-## Rules for the Hyperlambda Generator
+## Creating the API
 
-When you use `generate-hyperlambda` to create CRUD or other endpoints, follow these rules.
+For standard CRUD endpoints over database tables, invoke `crudify` once per verb per table — see the `create-crud-api` guide for the argument shapes. For app-specific endpoints — KPIs, aggregates, custom joins, business logic — use `generate-hyperlambda`, following these rules.
 
 1. Do not create one endpoint that returns all data. Create several smaller, simpler HTTP endpoints, each returning one or two concepts at most.
+2. For read endpoints specify optional filtering on relevant columns. Don't add too many filters, and keep prompts simple.
 
-For other endpoint types, consult the `example-hyperlambda-generator-prompts` guide for prompt templates.
+For endpoint prompt templates, consult the `example-hyperlambda-generator-prompts` guide.
 
-Example CRUD generator prompts — pass each as the prompt to `generate-hyperlambda`:
-
-**Create**
-
-```plaintext
-Executable Hyperlambda file creating a single item in [DATABASE] database and its [TABLE] table.
-The endpoint can only be invoked by 'root' users and returns the ID of the newly created record.
-
-The endpoint accepts the following arguments.
-- [ARG1]
-- [ARG2]
-```
-
-Replace `[ARG1]`/`[ARG2]` with column names from the table.
-
-**Read**
-
-```plaintext
-Executable Hyperlambda file returning items from [DATABASE] database and its [TABLE] table.
-The endpoint can be optionally paged and sorted, only be invoked by 'root' users, and returns a list of rows from the database.
-
-The endpoint accepts the following arguments
-- `limit` optional argument being maximum records to return
-- `offset` optional argument being offset into dataset to start retrieving items
-- `order` optional column name to sort by
-- `direction` optional direction to sort
-```
-
-**IMPORTANT** — For read endpoints also specify optional filtering on relevant columns. Don't add too many filters, and keep prompts simple.
-
-**Update**
-
-```plaintext
-Executable Hyperlambda file updating a single item in [DATABASE] database and its [TABLE] table.
-The endpoint can only be invoked by 'root' users and returns how many rows were affected.
-
-The endpoint accepts the following arguments.
-- [PRIMARY_KEY_FOR_TABLE]
-- [ARG1]
-- [ARG2]
-```
-
-`[PRIMARY_KEY_FOR_TABLE]` is the primary key of the table being updated.
-
-**Delete**
-
-```plaintext
-Executable Hyperlambda file deleting a single item from [DATABASE] database and its [TABLE] table.
-The endpoint can only be invoked by 'root' users.
-
-The endpoint accepts the following arguments.
-- [PRIMARY_KEY_FOR_TABLE]
-```
-
-Save each endpoint by passing a `filename` to `generate-hyperlambda`. Once saved, an endpoint is automatically exposed as an MCP tool. When all verbs are done, offer to test the API by invoking the GET endpoint with `invoke-http`.
+Save each generated endpoint by passing a `filename` to `generate-hyperlambda`. Once saved, an endpoint is automatically exposed as an MCP tool. When the API is done, offer to test it by invoking the GET endpoint with `invoke-http`.
 
 ## Important implementation details
 
@@ -93,4 +40,4 @@ For authentication, suggest either:
 1. Magic Auth (uses platform endpoints so existing users can log in)
 2. Google SSO/OIDC (any Google account can log in)
 
-**IMPORTANT** — If the user wants OIDC, your `generate-hyperlambda` prompts must explicitly say something like "Only 'guest' users can access the endpoint", so only guest users are authorized — unless the user explicitly overrides this.
+**IMPORTANT** — If the user wants OIDC, restrict endpoints to 'guest' users unless the user explicitly overrides this: pass `auth` as 'guest' to `crudify`, and make your `generate-hyperlambda` prompts explicitly say something like "Only 'guest' users can access the endpoint".

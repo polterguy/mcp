@@ -24,8 +24,9 @@ session, and never guess them.
 
 ## Hyperlambda
 - Never hand-write Hyperlambda. It is produced only by the Hyperlambda Generator
-  (`generate-hyperlambda`), which writes and saves it. The file tools refuse to save or patch
-  `.hl` files directly.
+  (`generate-hyperlambda`), or by the CRUD generator (`crudify`) for standard endpoints over
+  database tables — both write and save it. The file tools refuse to save or patch `.hl` files
+  directly.
 
 ## SQL
 - Default database is SQLite unless told otherwise. Know the schema before writing SQL
