@@ -47,6 +47,14 @@ before you start. These guides are the curated playbook for doing things the rig
 backend; consult them rather than guessing.
 
 ## Hyperlambda Generator
+Capability grounding: before your first generation of the session, call `list-slots` once.
+It returns every slot — the capability primitives of this instance — with a description of
+each. That list is the ground truth for what generated code can do here: a capability not
+in it does not exist on this instance, so re-plan around what does exist or tell the user —
+never prompt the generator for it. Cache the list for the rest of the session, and refresh
+it after installing a plugin. Use it for planning only: prompts describe actions, never
+slot names.
+
 Generate one file or snippet per call. Put all task detail in the prompt (database, table,
 columns, recipients, fields, expected outputs). Do not name internal tools or workflows in
 the prompt, do not ask it for JSON (that is the default), do not add unrequested
