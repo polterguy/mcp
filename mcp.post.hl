@@ -27,8 +27,8 @@
  *     added under inputSchema/properties, named after the argument, whose JSON-schema "type" is
  *     derived from the Hyperlambda type: short, ushort, int, uint, long, ulong, byte and sbyte become
  *     "integer"; decimal, double, single and float become "number"; bool becomes "boolean"; date and
- *     guid become "string" but additionally carry a "format" of "date-time" respectively "uuid"; and
- *     anything else (string, char, time, ...) becomes "string". An argument whose catalogue entry
+ *     guid become "string" but additionally carry a "format" of "date-time" respectively "uuid"; the
+ *     structured * type becomes "object"; and anything else (string, char, time, ...) becomes "string". An argument whose catalogue entry
  *     carries a description - resolved from the comment directly above the argument in the file's
  *     [.arguments] node - additionally gets that text as the property's "description". The
  *     descriptors accumulate as an array under result/tools.
@@ -189,6 +189,9 @@ else
                               .:string
                            set-value:x:@.jformat
                               .:uuid
+                        case:*
+                           set-value:x:@.jtype
+                              .:object
                         default
                            set-value:x:@.jtype
                               .:string
