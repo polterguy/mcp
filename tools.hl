@@ -48,21 +48,6 @@
    .:generate-random-string.hl
    .:create-pdf-file-from-html.hl
    .:generate-image.hl
-   .:puppeteer-click.hl
-   .:puppeteer-close.hl
-   .:puppeteer-connect.hl
-   .:puppeteer-content.hl
-   .:puppeteer-evaluate.hl
-   .:puppeteer-fill.hl
-   .:puppeteer-goto.hl
-   .:puppeteer-press.hl
-   .:puppeteer-screenshot.hl
-   .:puppeteer-select.hl
-   .:puppeteer-title.hl
-   .:puppeteer-type.hl
-   .:puppeteer-url.hl
-   .:puppeteer-wait-for-selector.hl
-   .:puppeteer-wait-for-url.hl
    .:get-context.hl
    .:execute-hyperlambda.hl
    .:execute-file.hl

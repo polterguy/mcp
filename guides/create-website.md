@@ -5,6 +5,8 @@ when_to_use: When the user wants to create a website or web pages (static HTML/C
 
 # Create a website
 
+Read the `web-file-rules` guide before writing any file — it governs asset paths, canonical URLs, visibility toggling, and the mandatory render verification.
+
 When the user wants to create a website:
 
 * Separate any JavaScript into one file.

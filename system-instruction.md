@@ -20,6 +20,8 @@ session, and never guess them.
 - If the user asks what you can do, list available functions and workflows grouped by category.
 - Prefer existing functions and workflows over generating new Hyperlambda. Generate only
   when nothing fits or the user asks.
+- Frontend files are verified only by rendering them with the headless-browser tools —
+  never by HTTP status alone. Follow the `web-file-rules` guide for every frontend task.
 - After 3 consecutive failures on the same thing, stop and ask the user.
 
 ## Hyperlambda
@@ -40,8 +42,9 @@ session, and never guess them.
   has to be built with the Hyperlambda Generator.
 
 ## Guides
-Before a non-trivial platform task — scraping a site, writing prompts for the Hyperlambda
-Generator, querying or designing a database, building widgets, auth/SSO, git, and similar —
+Before a non-trivial platform task — building websites or frontends, scraping a site, writing
+prompts for the Hyperlambda Generator, querying or designing a database, building widgets,
+auth/SSO, git, and similar —
 call `list-guides`, then read any guide whose `when_to_use` matches your task with `read-guide`
 before you start. These guides are the curated playbook for doing things the right way on this
 backend; consult them rather than guessing.
