@@ -7,7 +7,7 @@ when_to_use: When the user wants to build a full-stack app — a frontend (SPA) 
 
 A full-stack app is a frontend SPA plus the API it talks to. You always have to create the API to connect the frontend to the backend.
 
-Read the `web-file-rules` guide before writing any frontend file — it governs asset paths, canonical URLs, visibility toggling, and the mandatory render verification.
+Read the `web-file-rules` guide before writing any frontend file — it governs asset paths, canonical URLs, visibility toggling, and the optional headless render test.
 
 ## Steps
 

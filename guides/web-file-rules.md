@@ -35,12 +35,12 @@ The HTML `hidden` attribute only applies user-agent-level `display: none`. ANY a
 2. Alternatively, toggle a class (e.g. `.is-hidden { display: none !important; }`) instead of the attribute.
 3. Never mix the `hidden` attribute with elements that have author-level `display` rules unless one of the two guards above is in place.
 
-## Verify by rendering
+## Optional headless render test
 
-A frontend that returns HTTP 200 is NOT verified. Broken asset paths and wrong initial visibility are invisible at HTTP level and obvious at first render. After creating or updating a frontend, ALWAYS verify by rendering it with the headless-browser tools before declaring it done:
+A frontend that returns HTTP 200 is not yet proven to render correctly — broken asset paths and wrong initial visibility are invisible at HTTP level and obvious at first render. After finishing a frontend, OFFER the user a headless browser test. NEVER run it without the user's confirmation — ask first, and only proceed on an explicit yes.
+
+If the user confirms:
 
 1. `puppeteer-connect`, then `puppeteer-goto` the app's canonical URL (e.g. `https://HOST/foo`).
-2. `puppeteer-evaluate` to confirm assets loaded and the initial state is correct, for example:
-   `JSON.stringify({css: document.styleSheets.length, visible: [...document.body.children].filter(e => getComputedStyle(e).display !== 'none').map(e => e.id || e.tagName)})`
-   Expect `css` above zero, and only the intended initial containers visible (e.g. login visible; app shell and modals not).
-3. `puppeteer-screenshot` for a visual check when in doubt, then `puppeteer-close`.
+2. `puppeteer-screenshot` and judge it: page styled, and only the intended initial containers visible (e.g. login visible; app shell and modals not).
+3. `puppeteer-close`.
