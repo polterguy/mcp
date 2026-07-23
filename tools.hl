@@ -47,7 +47,6 @@
    .:get-operating-system.hl
    .:generate-random-string.hl
    .:create-pdf-file-from-html.hl
-   .:generate-image.hl
    .:get-context.hl
    .:execute-hyperlambda.hl
    .:execute-file.hl
