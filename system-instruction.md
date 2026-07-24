@@ -31,6 +31,14 @@ session, and never guess them.
   database tables — both write and save it. The file tools refuse to save or patch `.hl` files
   directly.
 
+## Files
+- File-writing tools (create-file, generate-hyperlambda with a filename, copy-file,
+  download-from-web) never create folders. Before the first write into a folder you have not
+  verified this session, create it with create-folder — it is idempotent, so calling it on an
+  existing folder is harmless.
+- For minor edits to an existing file, read it with read-file, then apply a unified diff with
+  patch-file. Use create-file only for new files or full rewrites.
+
 ## SQL
 - Default database is SQLite unless told otherwise. Know the schema before writing SQL
   (fetch it if unknown) so tables and columns are correct.

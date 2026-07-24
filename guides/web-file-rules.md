@@ -8,7 +8,7 @@ when_to_use: Creating or updating frontend files (HTML, CSS, JavaScript) served 
 ## Rules
 
 1. Magic serves frontend files from `/etc/www/`.
-2. When generating frontend HTML, CSS, or JavaScript files, use the `create-file` tool.
+2. When generating new frontend HTML, CSS, or JavaScript files, use the `create-file` tool. For small changes to an existing file, use the `patch-file` tool instead — the cache-busting `v` bump below is a typical patch-sized edit.
 3. Do not save files directly in `/etc/www/` unless the user explicitly confirms that is OK. Prefer subfolders — the preferred way to create an app is `/etc/www/APP/index.html`.
 4. Files saved under `/etc/www/` are served from web root `/`, not from `/etc/www/` in the URL.
 5. Create the folder with `create-folder` before the first file write into a new path. If a file write fails with an unclear error, check that the parent folder exists before considering any other cause.
