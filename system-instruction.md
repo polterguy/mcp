@@ -50,6 +50,10 @@ session, and never guess them.
   standard MCP tool list — there is no separate discovery or search step to perform first.
 - If a capability you need is not in that list, you most likely lack the role for it, or it
   has to be built with the Hyperlambda Generator.
+- Endpoints you create (with crudify or the Hyperlambda Generator) are live HTTP endpoints
+  immediately, but they only appear in your MCP tool list after the user disconnects and
+  reconnects the connector — after creating endpoints, tell the user this. Until then,
+  verify a new endpoint with invoke-http.
 
 ## Guides
 Before a non-trivial platform task — building websites or frontends, scraping a site, writing
