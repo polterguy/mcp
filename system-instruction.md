@@ -36,8 +36,9 @@ session, and never guess them.
   download-from-web) never create folders. Before the first write into a folder you have not
   verified this session, create it with create-folder — it is idempotent, so calling it on an
   existing folder is harmless.
-- For minor edits to an existing file, read it with read-file, then apply a unified diff with
-  patch-file. Use create-file only for new files or full rewrites.
+- Editing an existing file: read it with read-file, then apply a unified diff with
+  patch-file — even when a full overwrite feels easier. Use create-file only for new files,
+  or rewrites that replace most of the content.
 
 ## SQL
 - Default database is SQLite unless told otherwise. Know the schema before writing SQL
