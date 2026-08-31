@@ -22,13 +22,35 @@ same battle tested CRUD generator the dashboard is using. Steps:
    endpoints and MCP tools — no separate registration step — and the GET verb also generates a
    record count endpoint. GET endpoints support paging, sorting and filtering out of the box.
    Pass `overwrite` as true to regenerate endpoints that already exist.
+7. For the GET verb, ask whether the user also wants reporting endpoints, and pass `aggregate`,
+   `distinct` and/or `search` accordingly — see below. Pass `paging` or `sorting` as false only
+   when the user explicitly wants those arguments gone.
+
+## GET reporting endpoints
+
+Only for the `get` verb, and each is a separate generated endpoint alongside the plain read one:
+
+| Argument    | Endpoints generated                | What they return                                                     |
+|-------------|------------------------------------|----------------------------------------------------------------------|
+| `aggregate` | `-aggregate` and `-group`          | min, max, sum or avg of a column, and the same grouped by a column   |
+| `distinct`  | `-distinct` and `-count-distinct`  | unique values of a column, and the count of them                     |
+| `search`    | `-search`                          | keyword density search across the table's string columns             |
+
+`search` is ignored for tables having no string columns. These are what make a table usable for
+KPIs and dashboards — offer them whenever the user's goal is reporting rather than plain CRUD.
 
 ## crudify arguments
 
-- `database` is on the format `[connection-string|database]`, e.g. `[generic|chinook]`.
+- `database` is the plain name of the database, e.g. `chinook` — never a connection string
+  reference. It can only contain a-z, 0-9, `_` and `-`.
+- `database-type` is optional and can be `mysql`, `pgsql`, `mssql` or `sqlite`. Defaults to `sqlite`.
+- `connection-string` is optional and names a configured connection. Defaults to `generic`. Pass it
+  when the database lives on a connection other than the default one.
 - `table` — for PostgreSQL tables outside the public schema use `schema.table`.
 - `moduleUrl` is the relative URL of the endpoint, typically the table name.
 - For `post` also pass `returnId` as true to return the id of the created record.
+- `log` is an optional static message the generated endpoint logs on every invocation, e.g.
+  `Album entry created`. Offer it for `post`, `put` and `delete` when the user wants an audit trail.
 - `args` holds the column declarations, and differs per verb:
 
 | Verb   | `columns`                                     | `primary`                                    |
@@ -55,8 +77,8 @@ Example — delete endpoint for a `track_tags` table with a composite key:
 
 ```json
 {
-  "databaseType": "sqlite",
-  "database": "[generic|chinook]",
+  "database-type": "sqlite",
+  "database": "chinook",
   "table": "track_tags",
   "moduleName": "music",
   "moduleUrl": "track_tags",
