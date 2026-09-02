@@ -40,6 +40,6 @@ Save each generated endpoint by passing a `filename` to `generate-hyperlambda`. 
 For authentication, suggest either:
 
 1. Magic Auth (uses platform endpoints so existing users can log in)
-2. Google SSO/OIDC (any Google account can log in)
+2. SSO through a configured OpenID Connect or OAuth provider - Google, Microsoft, Okta, Auth0, Keycloak, LinkedIn, Slack or GitHub (see the `openid-connect-sso-authentication` guide)
 
 **IMPORTANT** — If the user wants OIDC, restrict endpoints to 'guest' users unless the user explicitly overrides this: pass `auth` as 'guest' to `crudify`, and make your `generate-hyperlambda` prompts explicitly say something like "Only 'guest' users can access the endpoint".
