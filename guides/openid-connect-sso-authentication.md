@@ -92,7 +92,7 @@ The UI flow around this is always the same:
 
 ## Users, roles and endpoint access
 
-When a user signs in through a provider for the first time, a Magic user is created with the email address as its username and added to the `guest` role. Such a user has no password and can only sign in through the provider. An administrator can grant it further roles afterwards, at which point it is an ordinary Magic user.
+When a user signs in through a provider for the first time, a Magic user is created and added to the `guest` role. Its username is the email address scoped by the provider, `PROVIDER:EMAIL` in lower case, for example `google:jane@example.com` or `github:jane@example.com`, and the email is stored as an extra field on the user. The same person signing in through two providers is therefore two separate Magic users, so a provider can never vouch its way into an account another provider (or a password) created. Such a user has no password and can only sign in through the provider. An administrator can grant it further roles afterwards, at which point it is an ordinary Magic user.
 
 **IMPORTANT** - Because every provider sign-in produces a `guest` user, endpoints an app exposes to signed-in users should be restricted to the `guest` role unless the user explicitly asks otherwise: pass `auth` as `guest` to `crudify`, and say so in prompts to the Hyperlambda Generator.
 
@@ -108,7 +108,7 @@ Providers are configured under `magic:oidc` in the backend's configuration, whic
 | Auth0 | `auth0:client-id`, `auth0:issuer`, optional `auth0:client-secret` | code + PKCE | `issuer` is the tenant's issuer URL exactly as Auth0 reports it, including the trailing slash, e.g. `https://your-tenant.eu.auth0.com/`. |
 | Keycloak | `keycloak:client-id`, `keycloak:issuer`, optional `keycloak:client-secret` | code + PKCE | `issuer` is the realm's issuer URL, e.g. `https://keycloak.example.com/realms/master`. Leave the secret out for public clients. |
 | LinkedIn | `linkedin:client-id`, `linkedin:client-secret` | code, no PKCE | Requires the "Sign In with LinkedIn using OpenID Connect" product on the LinkedIn app. The secret is required. |
-| Slack | `slack:client-id`, `slack:client-secret` | code | "Sign in with Slack". The secret is required. |
+| Slack | `slack:client-id`, `slack:client-secret` | code + PKCE | "Sign in with Slack". The secret is required. |
 | GitHub | `github:client-id`, `github:client-secret` | code (OAuth, no id_token) | The secret is required. The user's identity is read from GitHub's user API after the exchange. |
 
 The keys are nested, so Microsoft for instance is configured as:

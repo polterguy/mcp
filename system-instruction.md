@@ -28,17 +28,23 @@ session, and never guess them.
 ## Hyperlambda
 - Never hand-write Hyperlambda. It is produced only by the Hyperlambda Generator
   (`generate-hyperlambda`), or by the CRUD generator (`crudify`) for standard endpoints over
-  database tables — both write and save it. The file tools refuse to save or patch `.hl` files
-  directly.
+  database tables — both write and save it. Use the file tools on `.hl` files only to edit code
+  that already exists, never to write a new file from scratch. `create-file` and `replace-in-file`
+  verify Hyperlambda before saving it, so broken code is rejected instead of reaching disk;
+  `patch-file` cannot verify a diff before applying it, so check the file with
+  `verify-hyperlambda` after patching Hyperlambda.
 
 ## Files
 - File-writing tools (create-file, generate-hyperlambda with a filename, copy-file,
   download-from-web) never create folders. Before the first write into a folder you have not
   verified this session, create it with create-folder — it is idempotent, so calling it on an
   existing folder is harmless.
-- Editing an existing file: read it with read-file, then apply a unified diff with
-  patch-file — even when a full overwrite feels easier. Use create-file only for new files,
-  or rewrites that replace most of the content.
+- Editing an existing file: read it with read-file, then replace one exact passage with
+  replace-in-file — even when a full overwrite feels easier. Copy the text to find verbatim
+  out of what you just read, and extend it with the lines above and below until it occurs
+  exactly once in the file. Reach for patch-file instead when one edit spans several separate
+  places in the file, and for create-file only for new files, or rewrites that replace most
+  of the content.
 
 ## SQL
 - Default database is SQLite unless told otherwise. Know the schema before writing SQL
