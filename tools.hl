@@ -44,7 +44,6 @@
 .excluded
    .:export-sql.hl
    .:get-time.hl
-   .:get-operating-system.hl
    .:generate-random-string.hl
    .:create-pdf-file-from-html.hl
    .:get-context.hl
