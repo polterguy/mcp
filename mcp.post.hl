@@ -196,29 +196,45 @@ else
                            set-value:x:@.jtype
                               .:string
 
-                     unwrap:x:+/+/*/**
-                     set-name:x:+/*/*
+                     /*
+                      * An endpoint file can declare the same argument twice (for instance a PUT whose primary
+                      * key was also passed as a column). JSON objects cannot hold two properties with the same
+                      * name, so the first declaration wins and the duplicate is logged, instead of one malformed
+                      * file breaking the entire catalogue for every caller.
+                      */
+                     .argname
+                     set-value:x:@.argname
                         get-value:x:@.dp/#/*/name
-                     add:x:@.tool/*/inputSchema/*/properties
-                        .
-                           name
-                              type:x:@.jtype
-
                      if
-                        not-null:x:@.jformat
+                        exists:x:@.tool/*/inputSchema/*/properties/*/{@.argname}
                         .lambda
-                           unwrap:x:+/*/*
-                           add:x:@.tool/*/inputSchema/*/properties/0/-
-                              .
-                                 format:x:@.jformat
+                           log.info:MCP tools/list skipped a duplicate argument declaration
+                              tool:x:@.tool/*/name
+                              argument:x:@.argname
+                     else
+                        unwrap:x:+/+/*/**
+                        set-name:x:+/*/*
+                           get-value:x:@.dp/#/*/name
+                        add:x:@.tool/*/inputSchema/*/properties
+                           .
+                              name
+                                 type:x:@.jtype
 
-                     if
-                        not-null:x:@.dp/#/*/description
-                        .lambda
-                           unwrap:x:+/*/*
-                           add:x:@.tool/*/inputSchema/*/properties/0/-
-                              .
-                                 description:x:@.dp/#/*/description
+                        if
+                           not-null:x:@.jformat
+                           .lambda
+                              unwrap:x:+/*/*
+                              add:x:@.tool/*/inputSchema/*/properties/0/-
+                                 .
+                                    format:x:@.jformat
+
+                        if
+                           not-null:x:@.dp/#/*/description
+                           .lambda
+                              unwrap:x:+/*/*
+                              add:x:@.tool/*/inputSchema/*/properties/0/-
+                                 .
+                                    description:x:@.dp/#/*/description
 
             add:x:@.envelope/*/result/*/tools
                .
