@@ -27,8 +27,9 @@ A memory has these fields:
 - `uri` - optional. The URL or reference the memory belongs to, such as the endpoint a snippet
   was written for. `search-memory` can be restricted to it.
 - `meta` - optional. A short label for the kind of memory, such as `hyperlambda` or `preference`.
-- `type` - optional. The name of the collection, defaulting to `memory`. A collection is created
-  the first time it is used. Lower case letters, numbers, `-` and `_` only.
+- `type` - optional. The name of the collection, defaulting to `default`, the type the dashboard
+  assistant itself uses. Any other name creates a collection the first time it is used. Lower case
+  letters, numbers, `-` and `_` only.
 
 ## Example: remembering Hyperlambda
 
@@ -79,9 +80,9 @@ Hyperlambda is only one use. The same four functions work for any text.
 - **Other code** - SQL queries, curl commands, JSON templates. Store them verbatim, and use `meta`
   for the language.
 
-Keep related memories in the same collection, and use another `type` when material should never be
-mixed, such as `hyperlambda-snippets` apart from personal preferences. A search only looks in one
-collection.
+Everything lands in `default` unless you say otherwise. Use another `type` when material should
+never be mixed, such as `hyperlambda-snippets` apart from personal preferences. A search only looks
+in one collection, and `meta` and `uri` help tell kinds of memory apart within one.
 
 ## How to search well
 
@@ -106,8 +107,13 @@ collection.
 - All four functions require the root role.
 - Searching by meaning needs an OpenAI key configured on the server. If vectorising fails when
   creating a memory, the call reports the error but the memory is still saved and found by keyword
-  - search for it, then call `update-memory` on its `id` to try again. A collection can also be set to keyword only in the Machine Learning section, and
-  then needs no key at all.
+  - search for it, then call `update-memory` on its `id` to try again. A collection can also be set
+  to keyword only in the Machine Learning section, and then needs no key at all.
 - The meaning search uses vectors of 1536 dimensions, which the default embedding model produces.
 - There is no expiry. Prune old memories with `delete-memory`.
+- The memory functions never switch on automatic retrieval. Memories saved in `default` are not
+  added to the dashboard assistant's context by themselves - that only happens if someone turns on
+  embeddings for the `default` type in the Machine Learning section.
+- Memories in `default` show up with the type's other training snippets in that section, where
+  they can also be read and edited.
 - After the functions first appear, an MCP client must reconnect to see them.
