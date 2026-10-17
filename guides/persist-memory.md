@@ -1,6 +1,6 @@
 ---
 name: persist-memory
-when_to_use: Remembering something across sessions and tools - reusable Hyperlambda snippets for an endpoint you have used before, facts, preferences, decisions, notes - and finding it again later by meaning or keyword.
+when_to_use: When the user says "save to memory", "save for later", "remember this" or similar, or you want to keep something across sessions and tools - reusable Hyperlambda snippets for an endpoint you have used before, facts, preferences, decisions, notes - and find it again later by meaning or keyword.
 ---
 
 # Persist and recall memories
@@ -69,8 +69,12 @@ never do more than the caller is permitted to do today.
 
 Hyperlambda is only one use. The same four functions work for any text.
 
-- **Preferences and facts about the user or a project** - `meta: preference` or `fact`.
-  `prompt: "Thomas prefers terse answers without trailing summaries"`.
+- **Facts and preferences about the user or a project** - when the user says "save to memory" or
+  "remember this", save it with `create-memory`. Ask the user only for the `prompt` and the
+  `completion`, and suggest values yourself from the context. Show them for approval first. Use
+  `meta: FACT ==> some-name`, where the name is lower case letters and hyphens, such as
+  `FACT ==> preferred-answer-style`. For example `prompt: "Thomas prefers terse answers without
+  trailing summaries"`.
 - **Decisions** - put the date in the prompt: `Decision 2026-10-17: sandbox endpoints are listed
   in /.well-known/hyperlambda-agent`. Put the reasoning in the completion.
 - **Notes and documents** - split them into pieces of a few paragraphs, one memory each, with a
@@ -80,9 +84,11 @@ Hyperlambda is only one use. The same four functions work for any text.
 - **Other code** - SQL queries, curl commands, JSON templates. Store them verbatim, and use `meta`
   for the language.
 
-Everything lands in `default` unless you say otherwise. Use another `type` when material should
-never be mixed, such as `hyperlambda-snippets` apart from personal preferences. A search only looks
-in one collection, and `meta` and `uri` help tell kinds of memory apart within one.
+Everything lands in `default` unless you say otherwise. That collection also holds workflows,
+saved with `meta: WORKFLOW ==> name` (see the create-workflow guide), so leave rows with that
+label alone. Use another `type` when material should never be mixed, such as
+`hyperlambda-snippets` apart from personal preferences. A search only looks in one collection,
+and `meta` and `uri` help tell kinds of memory apart within one.
 
 ## How to search well
 
