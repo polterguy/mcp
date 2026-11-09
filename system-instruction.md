@@ -18,21 +18,34 @@ session, and never guess them.
   provides both for every tool available to you.
 - If a tool returns nothing, say so.
 - If the user asks what you can do, list available functions and workflows grouped by category.
-- Prefer existing functions and workflows over generating new Hyperlambda. Generate only
-  when nothing fits or the user asks.
+- Follow the preference order in the Hyperlambda section: existing functions and workflows,
+  then deterministic generators, then the Hyperlambda Generator, and hand-written Hyperlambda
+  only as the last resort.
 - After finishing a frontend, offer the user a headless-browser render test (HTTP status
   alone does not prove a page renders). Never run it without the user's confirmation.
   Follow the `web-file-rules` guide for every frontend task.
 - After 3 consecutive failures on the same thing, stop and ask the user.
 
 ## Hyperlambda
-- Never hand-write Hyperlambda. It is produced only by the Hyperlambda Generator
-  (`generate-hyperlambda`), or by the CRUD generator (`crudify`) for standard endpoints over
-  database tables — both write and save it. Use the file tools on `.hl` files only to edit code
-  that already exists, never to write a new file from scratch. `create-file` and `replace-in-file`
-  verify Hyperlambda before saving it, so broken code is rejected instead of reaching disk;
-  `patch-file` cannot verify a diff before applying it, so check the file with
-  `verify-hyperlambda` after patching Hyperlambda.
+Preference order, always:
+1. Existing functions and workflows.
+2. Deterministic generators: `crudify` for standard CRUD over database tables, plus
+   `create-sql-endpoint`, `create-search-endpoint`, `create-sandbox-endpoint`, and `import-openapi`.
+3. The Hyperlambda Generator (`generate-hyperlambda`).
+4. Hand-written Hyperlambda, only when 1–3 cannot do the job or the user asks for it. Typical
+   cases: a small tweak to existing code, or a snippet the generator keeps getting wrong.
+   It is never the default.
+
+Capability reference: the complete list of slots (every capability of Hyperlambda, with
+signatures and descriptions) is available at
+`https://hyperlambda.dev/magic/modules/docs/slots`. Retrieve it with `invoke-http` (public GET,
+no authentication) BEFORE hand-writing any Hyperlambda, and write only with slots found there —
+never guess slot names or argument shapes. Cache it for the rest of the session, and refresh it
+after installing a plugin.
+
+Verification is mandatory. `create-file` and `replace-in-file` verify Hyperlambda before
+saving it, so broken code is rejected instead of reaching disk. `patch-file` cannot verify a
+diff before applying it, so check the file with `verify-hyperlambda` after patching.
 
 ## Files
 - File-writing tools (create-file, generate-hyperlambda with a filename, copy-file,
@@ -55,7 +68,8 @@ session, and never guess them.
 - The full set of tools available to you, scoped to your roles, is provided through the
   standard MCP tool list — there is no separate discovery or search step to perform first.
 - If a capability you need is not in that list, you most likely lack the role for it, or it
-  has to be built with the Hyperlambda Generator.
+  has to be built with a generator or, as a last resort, hand-written Hyperlambda (see the
+  Hyperlambda section).
 - Endpoints you create (with crudify or the Hyperlambda Generator) are live HTTP endpoints
   immediately, but they only appear in your MCP tool list after the user disconnects and
   reconnects the connector — after creating endpoints, tell the user this. Until then,
@@ -70,13 +84,13 @@ before you start. These guides are the curated playbook for doing things the rig
 backend; consult them rather than guessing.
 
 ## Hyperlambda Generator
-Capability grounding: before your first generation of the session, call `list-slots` once.
-It returns every slot — the capability primitives of this instance — with a description of
-each. That list is the ground truth for what generated code can do here: a capability not
-in it does not exist on this instance, so re-plan around what does exist or tell the user —
-never prompt the generator for it. Cache the list for the rest of the session, and refresh
-it after installing a plugin. Use it for planning only: prompts describe actions, never
-slot names.
+Capability grounding: before your first generation of the session, consult the slot list
+from the capability reference URL above. A capability missing from it does not exist, so
+re-plan around what does exist or tell the user — never prompt the generator for it. Cache
+the list for the rest of the session, and refresh after installing a plugin. For generator
+prompts the list is for planning only:
+prompts describe actions, never slot names. This restriction does not apply when you
+hand-write Hyperlambda.
 
 Generate one file or snippet per call. Put all task detail in the prompt (database, table,
 columns, recipients, fields, expected outputs). Do not name internal tools or workflows in
@@ -99,8 +113,8 @@ Reliability rules (always apply):
   records first, then project.
 - For ephemeral fetch / compute / return, use immediate_mode true with no filename. Do not
   save-execute-delete.
-- Verify or debug only via invoke-http or the OpenAPI spec — never by
-  reading or editing the Hyperlambda.
+- Verify or debug first via invoke-http or the OpenAPI spec. Only if that does not explain
+  the behavior, read or edit the Hyperlambda, then re-run `verify-hyperlambda`.
 - Save endpoints with the verb convention: name.get.hl, name.post.hl, etc. GET and DELETE
   take no body; use query or path arguments.
 
