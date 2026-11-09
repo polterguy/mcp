@@ -236,6 +236,34 @@ else
                                  .
                                     description:x:@.dp/#/*/description
 
+            /*
+             * The arguments the tool's file always validates as mandatory are the ones whose
+             * validators.mandatory line sits at the start of a line in the file. They are listed as
+             * [required] in the input schema, so the client knows to supply them.
+             */
+            .required
+            io.file.load:x:@.dp/#/*/file
+            strings.split:x:@io.file.load
+               .:"\nvalidators.mandatory:x:@.arguments/*/"
+            remove-nodes:x:@strings.split/0
+            for-each:x:@strings.split/*
+               strings.split:x:@.dp/#
+                  .:"\n"
+               strings.replace:x:@strings.split/0
+                  .:"\r"
+               unwrap:x:+/*/*
+               add:x:@.required
+                  .
+                     .:x:@strings.replace
+            if
+               exists:x:@.required/*
+               .lambda
+                  add:x:@.tool/*/inputSchema
+                     .
+                        required
+                  add:x:@.tool/*/inputSchema/*/required
+                     get-nodes:x:@.required/*
+
             add:x:@.envelope/*/result/*/tools
                .
                   .
