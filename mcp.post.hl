@@ -332,8 +332,11 @@ else
                         set-value:x:@.text
                            lambda2json:x:@execute-file/*
                   else
+
+                     // MCP requires [text] to be a string, so scalar results (int, bool, etc) are converted.
                      set-value:x:@.text
-                        get-value:x:@execute-file
+                        convert:x:@execute-file
+                           type:string
                   add:x:@.envelope
                      .
                         result
