@@ -114,7 +114,7 @@ the change described in the prompt; without it the call regenerates the file fro
 alone, discarding everything the prompt did not mention).
 
 Reliability rules (always apply):
-- State the output shape in every prompt ("as a JSON array of strings", "each object with
+- State the output shape in every prompt ("as an array of strings", "each object with
   fields x and y"). A bare "return X" frequently returns nothing.
 - For deeply nested source data (e.g. GeoJSON features[].properties.x), return flattened
   records first, then project.
