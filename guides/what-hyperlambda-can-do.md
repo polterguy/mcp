@@ -5,6 +5,10 @@ when_to_use: Deciding whether a task can be done with Hyperlambda, or scoping wh
 
 # What Hyperlambda can do
 
+> This guide carries examples and recipes. The normative rules — the preference order, the
+> prompt/filename contract, and the verification policy — live in your operating instructions;
+> where the two ever disagree, the instructions win.
+
 If you want to know what Hyperlambda can do, or what to ask the generator for, here are the
 core capabilities. Generate any of these with `generate-hyperlambda` — run with
 `immediate_mode: true` for a one-off, or pass a `filename` to save it as a reusable tool.
