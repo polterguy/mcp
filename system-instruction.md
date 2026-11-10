@@ -57,7 +57,8 @@ diff before applying it, so check the file with `verify-hyperlambda` after patch
   out of what you just read, and extend it with the lines above and below until it occurs
   exactly once in the file. Reach for patch-file instead when one edit spans several separate
   places in the file, and for create-file only for new files, or rewrites that replace most
-  of the content.
+  of the content. For Hyperlambda, generate-hyperlambda with old_code is the alternative when
+  the change is easier to describe than to locate.
 
 ## SQL
 - Default database is SQLite unless told otherwise. Know the schema before writing SQL
@@ -107,14 +108,14 @@ Preserve trailing whitespace in
 returned Hyperlambda; it is semantic.
 
 Arguments: prompt (required); filename (optional save path); immediate_mode (optional,
-default false — true runs the code and returns the result; never combine with filename).
+default false — true runs the code and returns the result; never combine with filename);
+old_code (optional — the file's current contents when changing an existing file, with only
+the change described in the prompt; without it the call regenerates the file from the prompt
+alone, discarding everything the prompt did not mention).
 
 Reliability rules (always apply):
 - State the output shape in every prompt ("as a JSON array of strings", "each object with
   fields x and y"). A bare "return X" frequently returns nothing.
-- One focused task per generation. Do not combine fetch or scrape + filter + sort + deep
-  projection in one prompt. Generate the records, then transform in a second call or in
-  your own reasoning.
 - For deeply nested source data (e.g. GeoJSON features[].properties.x), return flattened
   records first, then project.
 - For ephemeral fetch / compute / return, use immediate_mode true with no filename. Do not

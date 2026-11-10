@@ -36,8 +36,6 @@ A structured prompt makes under-specification obvious. Example:
 ```
 
 ## Rules that keep it reliable
-- **One focused task per call.** Don't combine fetch/scrape + filter + sort + deep projection.
-  Generate the records, then transform in a second call or in your own reasoning.
 - **Flatten deeply nested data first** (e.g. GeoJSON `features[].properties.x`): return flat
   records first, then project.
 - **Ephemeral fetch/compute/return** → `immediate_mode: true`, no filename. Don't
@@ -47,6 +45,11 @@ A structured prompt makes under-specification obvious. Example:
   *do* belong in the prompt. For a reusable file with arguments, ask for an "Executable
   Hyperlambda file" and control saving via the `filename` argument; the verb comes from the
   `.get.hl` / `.post.hl` extension.
+
+## Changing code that already exists
+Pass the file's current contents as `old_code` and describe only the delta in the prompt.
+Without `old_code` the call regenerates the file from the prompt alone — everything the prompt
+did not restate is gone.
 
 ## Verify by running it, not by reading it
 Check generated endpoints with `invoke-http` or the OpenAPI spec first — behaviour is the
