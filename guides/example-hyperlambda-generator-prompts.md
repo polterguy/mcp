@@ -5,6 +5,10 @@ when_to_use: When you need example prompts for the `generate-hyperlambda` tool, 
 
 # Example Hyperlambda Generator prompts
 
+> This guide carries examples and recipes. The normative rules — the preference order, the
+> prompt/filename contract, and the verification policy — live in your operating instructions;
+> where the two ever disagree, the instructions win.
+
 Hyperlambda is a DSL that solves most backend software development tasks, and it's especially strong on APIs, database CRUD, web scraping, and file management. Below are example prompts for the `generate-hyperlambda` tool that should work reliably.
 
 * "Create an executable Hyperlambda file accepting paging and sorting arguments that connects to the 'chinook' database and returns 'Artist' rows"
@@ -53,6 +57,17 @@ Once generated with `generate-hyperlambda`, the code can be immediately executed
 **IMPORTANT** — DO NOT ask the Hyperlambda Generator to create code that "returns JSON" to you. This is its *DEFAULT* behaviour and it will *ALWAYS* do that. Saying "return JSON" only confuses it.
 
 **IMPORTANT** — If the user asks you to generate Hyperlambda that interacts with a database you have access to, and the user doesn't give exact fields, use the `get-database-schema` tool to retrieve the schema. This lets you build better prompts that reference all tables, columns, indexes, and foreign keys correctly.
+
+**IMPORTANT** — Data paths belong in the prompt; the generated file's own save path does not. The paths above — `/README.md`, `/etc/public.txt`, `/etc/contacts.csv` — are files the *running code* touches, so they must be named in the prompt. Where the generated file itself is written is the `filename` argument instead. Both halves in one call:
+
+```json
+{
+  "prompt": "Executable Hyperlambda file that loads the CSV file at '/etc/data/customers.csv' and returns the rows whose 'country' column equals the [country] argument, as a JSON array of objects each with fields id, name, email, country. The [country] argument is a mandatory string.",
+  "filename": "/modules/crm/customers.get.hl"
+}
+```
+
+The prompt never mentions `/modules/crm/customers.get.hl`, and never says "GET" — the verb comes from the `.get.hl` extension on the filename.
 
 **IMPORTANT** — When creating prompts to scrape a website you CANNOT ask for "get me all products from ...". What you CAN do is ask for "Return all hyperlinks inside of DIV elements containing the 'product' CSS class", etc. The Hyperlambda generator doesn't analyse the HTML — it only generates Hyperlambda code, and it has no idea how to find "the product" or "all services".
 

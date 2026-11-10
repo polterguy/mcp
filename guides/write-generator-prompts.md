@@ -5,14 +5,20 @@ when_to_use: Asking the Hyperlambda Generator to create or change an endpoint, f
 
 # Writing good Hyperlambda Generator prompts
 
-You never hand-write Hyperlambda — `generate-hyperlambda` does. Its output is only as good as
+> This guide carries examples and recipes. The normative rules — the preference order, the
+> prompt/filename contract, and the verification policy — live in your operating instructions;
+> where the two ever disagree, the instructions win.
+
+`generate-hyperlambda` writes Hyperlambda for you; hand-writing is a last resort (see the
+preference order in your operating instructions). Its output is only as good as
 your prompt, and most failures come from vague or overloaded prompts. Treat the prompt as a
 **spec with no blanks left**, not a sentence.
 
 ## Always specify, concretely
 - **Operation** — the exact action, naming the *exact* artifacts: which file path is read,
-  which file path is written, which table, which columns. "Load `/etc/data/orders.csv`" — not
-  "read the orders".
+  which file path is written *by the running code*, which table, which columns. "Load
+  `/etc/data/orders.csv`" — not "read the orders". The path where the generated file itself is
+  saved is not part of the prompt; pass it as the `filename` argument.
 - **Inputs** — every argument by `name` and `type`, and whether it is **mandatory**.
 - **Output shape** — enumerate the fields. "JSON array of objects with fields id, name, email."
   A bare "return X" frequently returns nothing.
@@ -36,11 +42,14 @@ A structured prompt makes under-specification obvious. Example:
   records first, then project.
 - **Ephemeral fetch/compute/return** → `immediate_mode: true`, no filename. Don't
   save-execute-delete.
-- **Don't** name internal tools, ask for JSON (it's the default), or put filenames/HTTP verbs
-  in the prompt text. For a reusable file with arguments, ask for an "Executable Hyperlambda
-  file" and control saving via the `filename` argument.
+- **Don't** name internal tools, ask for JSON (it's the default), put the generated file's own
+  save path in the prompt text, or name an HTTP verb there. Data paths the code reads or writes
+  *do* belong in the prompt. For a reusable file with arguments, ask for an "Executable
+  Hyperlambda file" and control saving via the `filename` argument; the verb comes from the
+  `.get.hl` / `.post.hl` extension.
 
-## Verify the result, never read the code
-Check generated endpoints with `invoke-http` or the OpenAPI spec — not by
-reading or editing the Hyperlambda. **Always re-check auth**: a security constraint can be
-silently dropped from code that otherwise compiles and runs fine.
+## Verify by running it, not by reading it
+Check generated endpoints with `invoke-http` or the OpenAPI spec first — behaviour is the
+evidence, not the source. Read the Hyperlambda only when a run fails and the result doesn't
+explain why; if you then edit it, re-run `verify-hyperlambda`. **Always re-check auth**: a
+security constraint can be silently dropped from code that otherwise compiles and runs fine.

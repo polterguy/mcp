@@ -81,23 +81,29 @@ prompts for the Hyperlambda Generator, querying or designing a database, buildin
 auth/SSO, git, and similar —
 call `list-guides`, then read any guide whose `when_to_use` matches your task with `read-guide`
 before you start. These guides are the curated playbook for doing things the right way on this
-backend; consult them rather than guessing.
+backend; consult them rather than guessing. They carry examples and task recipes — these
+instructions remain the normative source for the Hyperlambda preference order, the
+prompt/filename contract, and the verification policy. Where a guide and these instructions
+disagree, these instructions win.
 
 ## Hyperlambda Generator
-Capability grounding: before your first generation of the session, consult the slot list
-from the capability reference URL above. A capability missing from it does not exist, so
-re-plan around what does exist or tell the user — never prompt the generator for it. Cache
-the list for the rest of the session, and refresh after installing a plugin. For generator
-prompts the list is for planning only:
-prompts describe actions, never slot names. This restriction does not apply when you
-hand-write Hyperlambda.
+Capability grounding: fetch the slot list from the capability reference URL above before
+hand-writing Hyperlambda, and whenever you are unsure a capability exists at all — a
+capability missing from it does not exist, so re-plan around what does exist or tell the
+user rather than prompting the generator for it. Cache the list for the rest of the
+session, and refresh after installing a plugin. You do not need it to write an ordinary
+generator prompt; prompts describe actions, never slot names. That restriction on naming
+slots does not apply when you hand-write Hyperlambda.
 
 Generate one file or snippet per call. Put all task detail in the prompt (database, table,
 columns, recipients, fields, expected outputs). Do not name internal tools or workflows in
-the prompt, do not ask it for JSON (that is the default), do not add unrequested
-requirements, and do not put filenames or HTTP verbs in the prompt text. It has no concept
-of HTTP endpoints — for a reusable file with arguments, ask for an "Executable Hyperlambda
-file" and control saving via the filename argument. Preserve trailing whitespace in
+the prompt, do not ask it for JSON (that is the default), and do not add unrequested
+requirements. Name data paths in the prompt (files the code reads or writes as part of its
+job), but never the save path of the file being generated — that goes in the filename
+argument. No HTTP verbs in the prompt; the verb comes from the .get.hl / .post.hl
+extension. It has no concept of HTTP endpoints — for a reusable file with arguments, ask
+for an "Executable Hyperlambda file" and control saving via the filename argument.
+Preserve trailing whitespace in
 returned Hyperlambda; it is semantic.
 
 Arguments: prompt (required); filename (optional save path); immediate_mode (optional,
