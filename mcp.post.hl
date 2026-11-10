@@ -112,10 +112,14 @@ else
          set-value:x:@.envelope/*/result/*/protocolVersion
             get-value:x:@.version
 
-         // Delivering the operating instructions to the client, loaded dynamically so edits take effect
-         // without a restart. The instructions tell the client to call [whoami] to resolve session context.
+         /*
+          * Delivering the short server instructions to the client, loaded dynamically so edits take
+          * effect without a restart. Clients such as Claude Code truncate this field at 2048 characters
+          * (shared between all connected servers), so it only tells the client to call [whoami], which
+          * returns the full operating instructions from system-instruction.md. Keep this file short.
+          */
          set-value:x:@.envelope/*/result/*/instructions
-            io.file.load:/modules/mcp/system-instruction.md
+            io.file.load:/modules/mcp/server-instruction.md
          return-nodes:x:@.envelope/*
 
       case:ping
@@ -148,6 +152,33 @@ else
                get-first-value
                   get-value:x:@.dp/#/*/description
                   .:No description available
+
+            /*
+             * Clients such as Claude Code silently cut tool descriptions at 2048 characters. A longer
+             * description is shortened here instead, to its last complete sentence or line within the
+             * first 1900 characters (or a hard cut when there is none), with a note appended, so the
+             * client never receives a description cut off mid-sentence without notice.
+             */
+            if
+               mt
+                  strings.length:x:@.tool/*/description
+                  .:int:2000
+               .lambda
+                  .short
+                  set-value:x:@.short
+                     strings.substring:x:@.tool/*/description
+                        .:int:0
+                        .:int:1900
+                  set-value:x:@.short
+                     strings.regex-replace:x:@.short
+                        .:"(?s)^(.*[.\\n])[^.\\n]*$"
+                        .:$1
+                  set-value:x:@.tool/*/description
+                     strings.concat
+                        get-value:x:@.short
+                        .:" [Description shortened to fit the MCP client limit.]"
+                  log.info:MCP tools/list shortened a description over 2000 characters
+                     tool:x:@.tool/*/name
 
             if
                exists:x:@.dp/#/*/input/*
