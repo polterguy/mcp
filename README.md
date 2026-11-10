@@ -28,6 +28,8 @@ authorization, as an HTTP client would. There is no separate tool registry to ma
 | File | Role |
 | --- | --- |
 | `mcp.post.hl` | The JSON-RPC dispatcher (the endpoint). |
+| `server-instruction.md` | The short `instructions` text returned by `initialize`. Clients such as Claude Code cut this field at 2048 characters (shared between all connected servers), so it only tells the client to call `whoami` first. Keep it well under 1,000 characters. |
+| `system-instruction.md` | The full operating instructions, returned by the `whoami` workflow. No practical size limit. |
 | `tools.hl` | Internal helper — has no HTTP verb in its name, so it is **not** an endpoint. Returns the canonical tool catalogue (`name`, `file`, `description`, `input`) consumed by both `tools/list` and `tools/call`. This single source of truth guarantees a client can only invoke a tool that was also listed. |
 
 ## Supported methods
